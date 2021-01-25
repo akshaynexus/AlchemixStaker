@@ -9,6 +9,12 @@ Vault = project.load(
     Path.home() / ".brownie" / "packages" / config["dependencies"][0]
 ).Vault
 
+#1INCH token
+WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
+#Deployer as governance
+GOVERNANCE = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
+#Rewards to deployer
+REWARDS    = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
 
 def get_address(msg: str) -> str:
     while True:
@@ -28,11 +34,21 @@ def main():
     dev = accounts.load("dev")
     print(f"You are using: 'dev' [{dev.address}]")
 
-    if input("Is there a Vault for this strategy already? y/[N]: ").lower() != "y":
+    if input("Is there a Vault for this strategy already? y/[N]: ").lower() == "y":
         vault = Vault.at(get_address("Deployed Vault: "))
         assert vault.apiVersion() == API_VERSION
     else:
-        return  # TODO: Deploy one using scripts from Vault project
+        #Deploy vault
+        vault = Vault.deploy({"from": dev})
+        vault.initialize(
+            WANT_TOKEN,#OneInch token as want token
+            GOVERNANCE,#governance
+            REWARDS,#rewards
+            "",#nameoverride
+            "",#symboloverride
+            {"from": dev}
+        )
+        assert vault.apiVersion() == API_VERSION
 
     print(
         f"""
