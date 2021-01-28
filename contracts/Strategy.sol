@@ -39,16 +39,9 @@ contract Strategy is BaseStrategy {
         require(address(want) == address(OneInchToken),"wrong want token");
         //Approve staking contract to spend 1inch tokens
         OneInchToken.safeApprove(address(stakeT),type(uint256).max);
-        // You can set these parameters on deployment to whatever you want
-        // maxReportDelay = 6300;
-        // profitFactor = 100;
-        // debtThreshold = 0;
     }
 
-    // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
-
     function name() external override view returns (string memory) {
-        // Add your own name here, suggestion e.g. "StrategyCreamYFI"
         return "Strategy1INCHGovernance";
     }
 
@@ -99,17 +92,8 @@ contract Strategy is BaseStrategy {
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
-        //emergency exit is dealt with in prepareReturn
-        if (emergencyExit) {
-            return;
-        }
-        // do not invest if we have more debt than want
-        if (_debtOutstanding > balanceOfWant()) {
-            return;
-        }
         // Invest the rest of the want
-        uint256 _wantAvailable = balanceOfWant().sub(_debtOutstanding);
-
+        uint256 _wantAvailable = balanceOfWant();
         if (_wantAvailable > 0) {
             stakeT.stake(_wantAvailable);
         }
@@ -123,9 +107,10 @@ contract Strategy is BaseStrategy {
         // NOTE: Maintain invariant `want.balanceOf(this) >= _liquidatedAmount`
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
         uint256 balanceWant = balanceOfWant();
-        if (balanceWant < _amountNeeded) {
+        uint256 balanceStaked = balanceOfStake();
+        if (_amountNeeded > balanceWant) {
             // unstake needed amount
-            stakeT.unstake(_amountNeeded.sub(balanceWant));
+            stakeT.unstake((Math.min(balanceStaked, _amountNeeded - balanceWant)));
         }
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);

@@ -11,10 +11,13 @@ Vault = project.load(
 
 #1INCH token
 WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
+#
+STRATEGIST_ADDR = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
 #Deployer as governance
-GOVERNANCE = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
-#Rewards to deployer
-REWARDS    = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
+GOVERNANCE = STRATEGIST_ADDR
+#Rewards to deployer,we can change it to yearn governance after approval
+REWARDS    = STRATEGIST_ADDR
+
 
 def get_address(msg: str) -> str:
     while True:
@@ -48,6 +51,9 @@ def main():
             "",#symboloverride
             {"from": dev}
         )
+        #Set strategist as deployer
+        vault.setStrategist(STRATEGIST_ADDR)
+        print(API_VERSION)
         assert vault.apiVersion() == API_VERSION
 
     print(
