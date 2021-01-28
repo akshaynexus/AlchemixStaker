@@ -34,7 +34,7 @@ def test_operation(currency,Strategy, strategy, chain,vault, whale,gov,strategis
     vault.deposit(Wei("788000 ether"), {"from": alice})
     debugStratData(strategy,"Before mineup")
     #Lets mine a few blocks to build up rewards
-    chain.mine(500)
+    chain.mine(1)
     debugStratData(strategy,"Before harvest")
     #This harvest stakes the 1inch tokens gotten to vault
     strategy.harvest({"from": gov})
@@ -73,11 +73,13 @@ def test_migrate(currency,Strategy, strategy, chain,vault, whale,gov,strategist,
     chain.mine(1)
 
     strategy.harvest({'from': strategist})
-
-    print("\nEstimated APR: ", "{:.2%}".format(((vault.totalAssets()-100*1e18)*12)/(100*1e18)))
+    totalasset_beforemig = strategy.estimatedTotalAssets()
+    assert totalasset_beforemig > 0
 
     strategy2 = strategist.deploy(Strategy, vault)
     vault.migrateStrategy(strategy, strategy2, {'from': gov})
+    #Check that we got all the funds on migration
+    assert strategy2.estimatedTotalAssets() == totalasset_beforemig
 
 #Used to debug strategy balance data
 def debugStratData(strategy,msg):

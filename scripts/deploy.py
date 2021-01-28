@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from brownie import Strategy, accounts, config, network, project, web3
+from brownie.network.gas.strategies import GasNowStrategy
+from brownie.network import gas_price
 from eth_utils import is_checksum_address
 
 
@@ -11,13 +13,13 @@ Vault = project.load(
 
 #1INCH token
 WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
-#
 STRATEGIST_ADDR = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
 #Deployer as governance
 GOVERNANCE = STRATEGIST_ADDR
 #Rewards to deployer,we can change it to yearn governance after approval
 REWARDS    = STRATEGIST_ADDR
-
+#Set gas price as fast
+gas_price(62 * 1e9)
 
 def get_address(msg: str) -> str:
     while True:
@@ -51,8 +53,6 @@ def main():
             "",#symboloverride
             {"from": dev}
         )
-        #Set strategist as deployer
-        vault.setStrategist(STRATEGIST_ADDR)
         print(API_VERSION)
         assert vault.apiVersion() == API_VERSION
 
@@ -66,7 +66,12 @@ def main():
     symbol: '{vault.symbol()}'
     """
     )
-    if input("Deploy Strategy? y/[N]: ").lower() != "y":
-        return
+    if input("Deploy Strategy? [y]/n: ").lower() == "n":
+        strategy = Strategy.at(get_address("Deployed Strategy: "))
+    else:
+        strategy = Strategy.deploy(vault, {"from": dev}, publish_source=True)
+    #add strat to vault
+    vault.addStrategy(strategy, 10_000, 0, 0, {"from": dev})
+    #Set deposit limit to 5000 1INCH tokens
+    vault.setDepositLimit(5000 * 1e18)
 
-    strategy = Strategy.deploy(vault, {"from": dev})
