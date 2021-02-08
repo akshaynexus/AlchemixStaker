@@ -11,15 +11,16 @@ Vault = project.load(
     Path.home() / ".brownie" / "packages" / config["dependencies"][0]
 ).Vault
 
-#1INCH token
+# 1INCH token
 WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
 STRATEGIST_ADDR = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
-#Deployer as governance
+# Deployer as governance
 GOVERNANCE = STRATEGIST_ADDR
-#Rewards to deployer,we can change it to yearn governance after approval
-REWARDS    = STRATEGIST_ADDR
-#Set gas price as fast
+# Rewards to deployer,we can change it to yearn governance after approval
+REWARDS = STRATEGIST_ADDR
+# Set gas price as fast
 gas_price(62 * 1e9)
+
 
 def get_address(msg: str) -> str:
     while True:
@@ -43,15 +44,15 @@ def main():
         vault = Vault.at(get_address("Deployed Vault: "))
         assert vault.apiVersion() == API_VERSION
     else:
-        #Deploy vault
+        # Deploy vault
         vault = Vault.deploy({"from": dev})
         vault.initialize(
-            WANT_TOKEN,#OneInch token as want token
-            GOVERNANCE,#governance
-            REWARDS,#rewards
-            "",#nameoverride
-            "",#symboloverride
-            {"from": dev}
+            WANT_TOKEN,  # OneInch token as want token
+            GOVERNANCE,  # governance
+            REWARDS,  # rewards
+            "",  # nameoverride
+            "",  # symboloverride
+            {"from": dev},
         )
         print(API_VERSION)
         assert vault.apiVersion() == API_VERSION
@@ -70,8 +71,7 @@ def main():
         strategy = Strategy.at(get_address("Deployed Strategy: "))
     else:
         strategy = Strategy.deploy(vault, {"from": dev}, publish_source=True)
-    #add strat to vault
+    # add strat to vault
     vault.addStrategy(strategy, 10_000, 0, 0, {"from": dev})
-    #Set deposit limit to 5000 1INCH tokens
+    # Set deposit limit to 5000 1INCH tokens
     vault.setDepositLimit(5000 * 1e18)
-
