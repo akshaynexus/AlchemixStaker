@@ -38,20 +38,8 @@ def test_operation(
 
     vault.deposit(Wei("100000 ether"), {"from": bob})
     vault.deposit(Wei("788000 ether"), {"from": alice})
-    debugStratData(strategy, "Before mineup")
-    # Lets mine a few blocks to build up rewards
-    chain.mine(1)
-    debugStratData(strategy, "Before harvest")
-    # This harvest stakes the 1inch tokens gotten to vault
-    strategy.harvest({"from": gov})
-    assert currency.balanceOf(strategy) == 0
-    chain.sleep(2592000)
-    chain.mine(1)
-
-    debugStratData(strategy, "Before harvest2")
-    # This harvest takes pending rewards now and reinvests it
-    strategy.harvest({"from": gov})
-    debugStratData(strategy, "After harvest2")
+    #Sleep and harvest 5 times
+    sleepAndHarvest(5,strategy,gov)
     # We should have made profit
     assert vault.pricePerShare() / 1e18 > 1
     # Withdraws should not fail
@@ -65,6 +53,13 @@ def test_operation(
     # Make sure it isnt less than 1 after depositors withdrew
     assert vault.pricePerShare() / 1e18 >= 1
 
+def sleepAndHarvest(times, strat, gov):
+    for i in range(times):
+        debugStratData(strat, "Before harvest" + str(i))
+        chain.sleep(2500)
+        chain.mine(1)
+        strat.harvest({"from": gov})
+        debugStratData(strat, "After harvest" + str(i))
 
 # Used to debug strategy balance data
 def debugStratData(strategy, msg):

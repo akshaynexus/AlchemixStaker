@@ -69,7 +69,7 @@ contract Strategy is BaseStrategy {
 
         uint256 balanceOfWantBefore = balanceOfWant();
         //If we have pending rewards,take that out aswell
-        if (governanceT.earned(address(this)) > 0) {
+        if (pendingReward() > 0) {
             governanceT.getReward();
         }
 
@@ -105,7 +105,7 @@ contract Strategy is BaseStrategy {
 
     function prepareMigration(address _newStrategy) internal override {
         // If we have pending rewards,take that out
-        if (governanceT.earned(address(this)) > 0) {
+        if (pendingReward() > 0) {
             governanceT.getReward();
         }
 
