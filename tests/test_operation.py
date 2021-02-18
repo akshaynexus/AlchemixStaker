@@ -1,5 +1,4 @@
 import pytest
-
 from brownie import Wei, accounts, chain
 
 # reference code taken from yHegic repo and stecrv strat
@@ -33,7 +32,7 @@ def test_operation(
     vault.setDepositLimit(deposit_limit)
 
     # 100% of the vault's depositLimit
-    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
 
     currency.approve(gov, approve_amount, {"from": gov})
     currency.transferFrom(gov, bob, bob_deposit, {"from": gov})

@@ -8,7 +8,7 @@ def test_migrate(
     currency, Strategy, strategy, chain, vault, whale, gov, strategist, interface
 ):
     debt_ratio = 10_000
-    vault.addStrategy(strategy, debt_ratio, 0, 1000, {"from": gov})
+    vault.addStrategy(strategy, debt_ratio, 0, 2 ** 256 - 1, 1_000, {"from": gov})
 
     currency.approve(vault, 2 ** 256 - 1, {"from": whale})
     vault.deposit(Wei("100 ether"), {"from": whale})
