@@ -15,12 +15,14 @@ ISharer = interface.ISharer
 # Config data
 WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
 STRATEGIST_ADDR = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
+
 VAULT_REGISTRY = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c"
 SHARER = "0x2C641e14AfEcb16b4Aa6601A40EE60c3cc792f7D"
-STRATEGIST_MS = "0x16388463d60FFE0661Cf7F1f31a7D658aC790ff7"
+STRATEGIST_MULTISIG = "0x16388463d60FFE0661Cf7F1f31a7D658aC790ff7"
 TREASURY = "0x93A62dA5a14C80f265DAbC077fCEE437B1a0Efde"
 KEEP3R_MANAGER = "0x13dAda6157Fee283723c0254F43FF1FdADe4EEd6"
 DEV_MS = "0x846e211e8ba920B353FB717631C015cf04061Cc9"
+
 # Deployer as governance
 GOVERNANCE = STRATEGIST_ADDR
 # Rewards to deployer,we can change it to yearn governance after approval
@@ -56,7 +58,13 @@ def main():
         vaultRegistry = IVaultRegistry(VAULT_REGISTRY)
         # Deploy and get Vault deployment address
         expVaultTx = vaultRegistry.newExperimentalVault(
-            WANT_TOKEN, STRATEGIST_ADDR, STRATEGIST_MS, TREASURY, "", "", {"from": dev},
+            WANT_TOKEN,
+            STRATEGIST_ADDR,
+            STRATEGIST_MULTISIG,
+            TREASURY,
+            "",
+            "",
+            {"from": dev},
         )
         vault = Vault.at(expVaultTx.return_value)
     else:
@@ -97,3 +105,8 @@ def main():
     strategy.setRewards(SHARER, {"from": dev})
     if EXPERIMENTAL_DEPLOY:
         vault.setGovernance(DEV_MS, {"from": dev})
+        # Setup rewards
+        contributors = [dev.address]
+        _numOfShares = [660]
+        sharer = ISharer(SHARER)
+        sharer.setContributors(strategy, contributors, _numOfShares, {"from": dev})
