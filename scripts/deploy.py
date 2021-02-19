@@ -22,7 +22,7 @@ STRATEGIST_MULTISIG = "0x16388463d60FFE0661Cf7F1f31a7D658aC790ff7"
 TREASURY = "0x93A62dA5a14C80f265DAbC077fCEE437B1a0Efde"
 KEEP3R_MANAGER = "0x13dAda6157Fee283723c0254F43FF1FdADe4EEd6"
 DEV_MS = "0x846e211e8ba920B353FB717631C015cf04061Cc9"
-
+BRS_MS = "0xcF02A27199b4d2c842B442B08b55bBe27ca6Cb7C"
 # Deployer as governance
 GOVERNANCE = STRATEGIST_ADDR
 # Rewards to deployer,we can change it to yearn governance after approval
@@ -96,7 +96,7 @@ def main():
     else:
         strategy = Strategy.deploy(vault, {"from": dev}, publish_source=False)
     # add strat to vault
-    vault.addStrategy(strategy, 9800, 0, 0, 1000, {"from": dev})
+    vault.addStrategy(strategy, 9800, 0, 2**256-1, 1000, {"from": dev})
     # Set deposit limit to 1008 1INCH tokens,Approx 50K
     vault.setDepositLimit(1008 * 1e18, {"from": dev})
     # Set keeper
@@ -104,7 +104,8 @@ def main():
     # Set reward
     strategy.setRewards(SHARER, {"from": dev})
     if EXPERIMENTAL_DEPLOY:
-        vault.setGovernance(DEV_MS, {"from": dev})
+        vault.setGovernance(BRS_MS, {"from": dev})
+        vault.setManagementFee(0, {"from": dev})
         # Setup rewards
         contributors = [dev.address]
         _numOfShares = [660]
