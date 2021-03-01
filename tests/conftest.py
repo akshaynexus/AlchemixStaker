@@ -53,6 +53,17 @@ def currency(interface):
 
 
 @pytest.fixture
+def currencyLP(interface):
+    yield interface.ERC20("0xc3f279090a47e80990fe3a9c30d24cb117ef91a8")
+
+
+@pytest.fixture
+def whaleLP(accounts, web3, currency, chain):
+    # Random address with good amount of lps
+    yield accounts.at("0xf36B9a3848541297d824b346e590351F47742986", force=True)
+
+
+@pytest.fixture
 def whale(accounts, web3, currency, chain):
     # Team address,has plenty ALCX
     yield accounts.at("0x51e029a5Ef288Fb87C5e8Dd46895c353ad9AaAeC", force=True)
@@ -69,7 +80,24 @@ def vault(pm, gov, rewards, guardian, currency):
 
 
 @pytest.fixture
+def vaultlp(pm, gov, rewards, guardian, currencyLP):
+    Vault = pm(config["dependencies"][0]).Vault
+    vault = gov.deploy(Vault)
+    vault.initialize(currencyLP, gov, rewards, "", "", guardian)
+    vault.setManagementFee(0, {"from": gov})
+    vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
+    yield vault
+
+
+@pytest.fixture
 def stakingstrategy(strategist, keeper, vault, AlchemixStakingStrategy):
     strategy = strategist.deploy(AlchemixStakingStrategy, vault)
+    strategy.setKeeper(keeper)
+    yield strategy
+
+
+@pytest.fixture
+def strategylp(strategist, keeper, vaultlp, AlchemixETHStrategy):
+    strategy = strategist.deploy(AlchemixETHStrategy, vaultlp)
     strategy.setKeeper(keeper)
     yield strategy

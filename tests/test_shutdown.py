@@ -18,3 +18,21 @@ def test_shutdown(gov, whale, currency, vault, stakingstrategy):
     vault.revokeStrategy(stakingstrategy, {"from": gov})
     stakingstrategy.harvest()
     assert vault.strategies(stakingstrategy).dict()["totalDebt"] == 0
+
+
+def test_shutdown_lpstrat(gov, whaleLP, currencyLP, vaultlp, strategylp):
+    currencyLP.approve(vaultlp, 2 ** 256 - 1, {"from": gov})
+
+    currencyLP.approve(whaleLP, 2 ** 256 - 1, {"from": whaleLP})
+    currencyLP.transferFrom(whaleLP, gov, Wei("400 ether"), {"from": whaleLP})
+
+    vaultlp.setDepositLimit(Wei("400 ether"), {"from": gov})
+    # Start with 100% of the debt
+    vaultlp.addStrategy(strategylp, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
+    # Depositing 80k
+    vaultlp.deposit(Wei("400 ether"), {"from": gov})
+    strategylp.harvest()
+
+    vaultlp.revokeStrategy(strategylp, {"from": gov})
+    strategylp.harvest()
+    assert vaultlp.strategies(strategylp).dict()["totalDebt"] == 0

@@ -42,7 +42,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
         return pool.getStakeTotalDeposited(address(this), _poolId);
     }
 
-    function pendingReward() public view returns (uint256) {
+    function pendingReward() public view virtual returns (uint256) {
         return pool.getStakeTotalUnclaimed(address(this), _poolId);
     }
 
@@ -59,7 +59,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
         pool.withdraw(_poolId, _withdrawAmount);
     }
 
-    function getReward() internal {
+    function getReward() internal virtual {
         pool.claim(_poolId);
     }
 
@@ -112,7 +112,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
     }
 
-    function prepareMigration(address _newStrategy) internal override {
+    function prepareMigration(address _newStrategy) internal virtual override {
         //This claims rewards and withdraws deposited ALCX
         pool.exit(_poolId);
     }
