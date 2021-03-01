@@ -14,7 +14,7 @@ IVaultRegistry = interface.IVaultRegistry
 ISharer = interface.ISharer
 # Config data
 WANT_TOKEN = "0x111111111117dC0aa78b770fA6A738034120C302"
-STRATEGIST_ADDR = "0xAa9E20bAb58d013220D632874e9Fe44F8F971e4d"
+STRATEGIST_ADDR = "0x7495B77b15fCb52fbb7BCB7380335d819ce4c04B"
 
 VAULT_REGISTRY = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c"
 SHARER = "0x2C641e14AfEcb16b4Aa6601A40EE60c3cc792f7D"
@@ -29,8 +29,9 @@ GOVERNANCE = STRATEGIST_ADDR
 REWARDS = STRATEGIST_ADDR
 # Set this to true if we are using a experimental deploy flow
 EXPERIMENTAL_DEPLOY = True
+BASE_GASLIMIT = 400000
 # Set gas price as fast
-gas_price(62 * 1e9)
+gas_price(200 * 1e9)
 
 
 def get_address(msg: str) -> str:
@@ -48,9 +49,8 @@ def get_address(msg: str) -> str:
 
 def main():
     print(f"You are using the '{network.show_active()}' network")
-    dev = accounts.load("dev")
+    dev = accounts.load("stratdev")
     print(f"You are using: 'dev' [{dev.address}]")
-
     if input("Is there a Vault for this strategy already? y/[N]: ").lower() == "y":
         vault = Vault.at(get_address("Deployed Vault: "))
         assert vault.apiVersion() == API_VERSION
@@ -94,9 +94,9 @@ def main():
     if input("Deploy Strategy? [y]/n: ").lower() == "n":
         strategy = Strategy.at(get_address("Deployed Strategy: "))
     else:
-        strategy = Strategy.deploy(vault, {"from": dev}, publish_source=False)
+        strategy = Strategy.deploy(vault, {"from": dev}, publish_source=True)
     # add strat to vault
-    vault.addStrategy(strategy, 9800, 0, 2**256-1, 1000, {"from": dev})
+    vault.addStrategy(strategy, 9800, 0, 2 ** 256 - 1, 1000, {"from": dev})
     # Set deposit limit to 1008 1INCH tokens,Approx 50K
     vault.setDepositLimit(1008 * 1e18, {"from": dev})
     # Set keeper
@@ -110,4 +110,6 @@ def main():
         contributors = [dev.address]
         _numOfShares = [660]
         sharer = ISharer(SHARER)
-        sharer.setContributors(strategy, contributors, _numOfShares, {"from": dev})
+        sharer.setContributors(
+            strategy, contributors, _numOfShares, {"from": dev},
+        )
