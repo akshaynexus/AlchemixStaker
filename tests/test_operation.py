@@ -9,7 +9,7 @@ from brownie import Wei, accounts, chain
 @pytest.mark.require_network("mainnet-fork")
 def test_operation(
     currency,
-    strategy,
+    stakingstrategy,
     chain,
     vault,
     whale,
@@ -21,18 +21,18 @@ def test_operation(
     interface,
 ):
     # Amount configs
-    test_budget = Wei("888000 ether")
-    approve_amount = Wei("1000000 ether")
-    deposit_limit = Wei("889000 ether")
-    bob_deposit = Wei("100000 ether")
-    alice_deposit = Wei("788000 ether")
+    test_budget = Wei("8880 ether")
+    approve_amount = Wei("10000 ether")
+    deposit_limit = Wei("8890 ether")
+    bob_deposit = Wei("1000 ether")
+    alice_deposit = Wei("7880 ether")
     currency.approve(whale, approve_amount, {"from": whale})
     currency.transferFrom(whale, gov, test_budget, {"from": whale})
 
     vault.setDepositLimit(deposit_limit)
 
     # 100% of the vault's depositLimit
-    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
+    vault.addStrategy(stakingstrategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
 
     currency.approve(gov, approve_amount, {"from": gov})
     currency.transferFrom(gov, bob, bob_deposit, {"from": gov})
@@ -43,7 +43,7 @@ def test_operation(
     vault.deposit(bob_deposit, {"from": bob})
     vault.deposit(alice_deposit, {"from": alice})
     # Sleep and harvest 5 times
-    sleepAndHarvest(5, strategy, gov)
+    sleepAndHarvest(5, stakingstrategy, gov)
     # We should have made profit or stayed stagnant (This happens when there is no rewards in 1INCH rewards)
     assert vault.pricePerShare() / 1e18 >= 1
     # Withdraws should not fail
@@ -71,6 +71,6 @@ def sleepAndHarvest(times, strat, gov):
 def debugStratData(strategy, msg):
     print(msg)
     print("Total assets " + str(strategy.estimatedTotalAssets()))
-    print("1INCH Balance " + str(strategy.balanceOfWant()))
+    print("ALCX Balance " + str(strategy.balanceOfWant()))
     print("Stake balance " + str(strategy.balanceOfStake()))
     print("Pending reward " + str(strategy.pendingReward()))

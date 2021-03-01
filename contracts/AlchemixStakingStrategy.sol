@@ -11,44 +11,56 @@ import {SafeERC20, SafeMath, IERC20, Address} from "@openzeppelin/contracts/toke
 import "@openzeppelin/contracts/math/Math.sol";
 
 // Import interfaces for many popular DeFi projects, or add your own!
-import "../interfaces/I1INCHGovernance.sol";
-import "../interfaces/I1INCHGovernanceRewards.sol";
+import "../interfaces/IStakingPools.sol";
 
-contract Strategy is BaseStrategy {
+contract AlchemixStakingStrategy is BaseStrategy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    //Initiate 1inch interfaces
-    I1INCHGovernance public stakeT = I1INCHGovernance(0xA0446D8804611944F1B527eCD37d7dcbE442caba);
-    I1INCHGovernanceRewards public governanceT = I1INCHGovernanceRewards(0x0F85A912448279111694F4Ba4F85dC641c54b594);
+    uint256 _poolId = 1;
+
+    //Initiate staking gov interface
+    IStakingPools public pool = IStakingPools(0xAB8e74017a8Cc7c15FFcCd726603790d26d7DeCa);
 
     constructor(address _vault) public BaseStrategy(_vault) {
-        //Approve staking contract to spend 1inch tokens
-        want.safeApprove(address(stakeT), type(uint256).max);
+        //Approve staking contract to spend ALCX tokens
+        want.safeApprove(address(pool), type(uint256).max);
     }
 
     function name() external view override returns (string memory) {
-        return "Strategy1INCHGovernance";
+        return "StrategyAlchemixStaking";
     }
 
-    // returns balance of 1INCH
+    // returns balance of ALCX
     function balanceOfWant() public view returns (uint256) {
         return want.balanceOf(address(this));
     }
 
-    //Returns staked value
+    //Returns staked ALCX value
     function balanceOfStake() public view returns (uint256) {
-        return stakeT.balanceOf(address(this));
+        return pool.getStakeTotalDeposited(address(this), _poolId);
     }
 
     function pendingReward() public view returns (uint256) {
-        return governanceT.earned(address(this));
+        return pool.getStakeTotalUnclaimed(address(this), _poolId);
     }
 
     function estimatedTotalAssets() public view override returns (uint256) {
         //Add the vault tokens + staked tokens from 1inch governance contract
         return balanceOfWant().add(balanceOfStake()).add(pendingReward());
+    }
+
+    function _deposit(uint256 _depositAmount) internal {
+        pool.deposit(_poolId, _depositAmount);
+    }
+
+    function _withdraw(uint256 _withdrawAmount) internal {
+        pool.withdraw(_poolId, _withdrawAmount);
+    }
+
+    function getReward() internal {
+        pool.claim(_poolId);
     }
 
     function prepareReturn(uint256 _debtOutstanding)
@@ -68,7 +80,7 @@ contract Strategy is BaseStrategy {
         }
 
         uint256 balanceOfWantBefore = balanceOfWant();
-        governanceT.getReward();
+        getReward();
 
         _profit = balanceOfWant().sub(balanceOfWantBefore);
     }
@@ -83,7 +95,7 @@ contract Strategy is BaseStrategy {
         uint256 toInvest = _wantAvailable.sub(_debtOutstanding);
 
         if (toInvest > 0) {
-            stakeT.stake(toInvest);
+            _deposit(toInvest);
         }
     }
 
@@ -94,23 +106,23 @@ contract Strategy is BaseStrategy {
         uint256 balanceStaked = balanceOfStake();
         if (_amountNeeded > balanceWant) {
             // unstake needed amount
-            stakeT.unstake((Math.min(balanceStaked, _amountNeeded - balanceWant)));
+            _withdraw((Math.min(balanceStaked, _amountNeeded - balanceWant)));
         }
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
     }
 
     function prepareMigration(address _newStrategy) internal override {
-        // If we have pending rewards,take that out
-        governanceT.getReward();
-        stakeT.unstake(balanceOfStake());
+        //This claims rewards and withdraws deposited ALCX
+        pool.exit(_poolId);
     }
 
     // Override this to add all tokens/tokenized positions this contract manages
     // on a *persistent* basis (e.g. not just for swapping back to want ephemerally)
-    function protectedTokens() internal view override returns (address[] memory) {
-        address[] memory protected = new address[](1);
-        protected[0] = address(stakeT); // Staked 1inch tokens from governance contract
-        return protected;
-    }
+    function protectedTokens()
+        internal
+        view
+        override
+        returns (address[] memory)
+    {}
 }

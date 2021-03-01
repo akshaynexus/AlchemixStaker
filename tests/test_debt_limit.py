@@ -7,7 +7,7 @@ second_deposit_amount = Wei("160000 ether")
 final_amount = Wei("80000 ether")
 
 
-def test_increasing_debt_limit(gov, whale, currency, vault, strategy):
+def test_increasing_debt_limit(gov, whale, currency, vault, stakingstrategy):
     currency.approve(vault, 2 ** 256 - 1, {"from": gov})
     # Fund gov with enough tokens
     currency.approve(whale, deposit_amount + second_deposit_amount, {"from": whale})
@@ -17,12 +17,12 @@ def test_increasing_debt_limit(gov, whale, currency, vault, strategy):
 
     # Start with a 40k deposit limit
     vault.setDepositLimit(deposit_amount, {"from": gov})
-    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
+    vault.addStrategy(stakingstrategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
 
     # deposit 40k in total to test
     vault.deposit(deposit_amount, {"from": gov})
-    strategy.harvest()
-    assert strategy.estimatedTotalAssets() >= deposit_amount
+    stakingstrategy.harvest()
+    assert stakingstrategy.estimatedTotalAssets() >= deposit_amount
 
     # User shouldn't be able to deposit 40k more
     with brownie.reverts():
@@ -30,13 +30,13 @@ def test_increasing_debt_limit(gov, whale, currency, vault, strategy):
 
     vault.setDepositLimit(second_deposit_amount, {"from": gov})
     vault.deposit(deposit_amount, {"from": gov})
-    strategy.harvest()
+    stakingstrategy.harvest()
     assert (
-        strategy.estimatedTotalAssets() >= final_amount
+        stakingstrategy.estimatedTotalAssets() >= final_amount
     )  # Check that assets is >= 80k
 
 
-def test_decrease_debt_limit(gov, whale, currency, vault, strategy):
+def test_decrease_debt_limit(gov, whale, currency, vault, stakingstrategy):
     currency.approve(vault, 2 ** 256 - 1, {"from": gov})
     # Fund gov with enough tokens
     currency.approve(whale, deposit_amount + second_deposit_amount, {"from": whale})
@@ -46,15 +46,15 @@ def test_decrease_debt_limit(gov, whale, currency, vault, strategy):
 
     vault.setDepositLimit(second_deposit_amount, {"from": gov})
     # Start with 100% of the debt
-    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
+    vault.addStrategy(stakingstrategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     print(vault.availableDepositLimit())
     # Depositing 80k
     vault.deposit(second_deposit_amount, {"from": gov})
-    strategy.harvest()
-    assert strategy.estimatedTotalAssets() >= second_deposit_amount
+    stakingstrategy.harvest()
+    assert stakingstrategy.estimatedTotalAssets() >= second_deposit_amount
 
     # let's lower the debtLimit so the strategy adjust it's position
-    vault.updateStrategyDebtRatio(strategy, 5_000)
-    strategy.harvest()
-    assert strategy.estimatedTotalAssets() >= final_amount
-    assert vault.debtOutstanding(strategy) == 0
+    vault.updateStrategyDebtRatio(stakingstrategy, 5_000)
+    stakingstrategy.harvest()
+    assert stakingstrategy.estimatedTotalAssets() >= final_amount
+    assert vault.debtOutstanding(stakingstrategy) == 0
