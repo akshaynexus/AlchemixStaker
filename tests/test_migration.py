@@ -5,10 +5,20 @@ from brownie import Wei, chain
 
 @pytest.mark.require_network("mainnet-fork")
 def test_migrate(
-    currency, AlchemixStakingStrategy, stakingstrategy, chain, vault, whale, gov, strategist, interface
+    currency,
+    AlchemixStakingStrategy,
+    stakingstrategy,
+    chain,
+    vault,
+    whale,
+    gov,
+    strategist,
+    interface,
 ):
     debt_ratio = 10_000
-    vault.addStrategy(stakingstrategy, debt_ratio, 0, 2 ** 256 - 1, 1_000, {"from": gov})
+    vault.addStrategy(
+        stakingstrategy, debt_ratio, 0, 2 ** 256 - 1, 1_000, {"from": gov}
+    )
 
     currency.approve(vault, 2 ** 256 - 1, {"from": whale})
     vault.deposit(Wei("100 ether"), {"from": whale})

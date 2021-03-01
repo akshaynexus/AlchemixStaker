@@ -119,10 +119,5 @@ contract AlchemixStakingStrategy is BaseStrategy {
 
     // Override this to add all tokens/tokenized positions this contract manages
     // on a *persistent* basis (e.g. not just for swapping back to want ephemerally)
-    function protectedTokens()
-        internal
-        view
-        override
-        returns (address[] memory)
-    {}
+    function protectedTokens() internal view override returns (address[] memory) {}
 }
