@@ -26,8 +26,7 @@ def test_operation(
     deposit_limit = Wei("8890 ether")
     bob_deposit = Wei("1000 ether")
     alice_deposit = Wei("7880 ether")
-    currency.approve(whale, approve_amount, {"from": whale})
-    currency.transferFrom(whale, gov, test_budget, {"from": whale})
+    currency.transfer(gov, test_budget, {"from": whale})
 
     vault.setDepositLimit(deposit_limit)
 
