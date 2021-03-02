@@ -66,7 +66,7 @@ def whaleLP(accounts, web3, currency, chain):
 @pytest.fixture
 def whale(accounts, web3, currency, chain):
     # Team address,has plenty ALCX
-    yield accounts.at("0x51e029a5Ef288Fb87C5e8Dd46895c353ad9AaAeC", force=True)
+    yield accounts.at("0x8392F6669292fA56123F71949B52d883aE57e225", force=True)
 
 
 @pytest.fixture
