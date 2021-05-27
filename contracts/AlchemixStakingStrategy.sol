@@ -20,6 +20,9 @@ contract AlchemixStakingStrategy is BaseStrategy {
 
     uint256 _poolId = 1;
 
+    //Internal counter for alcx rewards on withdraw
+    uint256 public profitsOnWithdraw;
+
     //Initiate staking gov interface
     IStakingPools public pool = IStakingPools(0xAB8e74017a8Cc7c15FFcCd726603790d26d7DeCa);
 
@@ -82,7 +85,9 @@ contract AlchemixStakingStrategy is BaseStrategy {
         uint256 balanceOfWantBefore = balanceOfWant();
         getReward();
 
-        _profit = balanceOfWant().sub(balanceOfWantBefore);
+        _profit = balanceOfWant().sub(balanceOfWantBefore).add(profitsOnWithdraw);
+        //Reset profitsonwithdraw to 0 for next withdraws
+        profitsOnWithdraw = 0;
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
@@ -107,9 +112,15 @@ contract AlchemixStakingStrategy is BaseStrategy {
         if (_amountNeeded > balanceWant) {
             // unstake needed amount
             _withdraw((Math.min(balanceStaked, _amountNeeded - balanceWant)));
+            uint256 surplus = balanceOfWant() > _amountNeeded ? balanceOfWant().sub(_amountNeeded) : 0;
+            //Handle rewards realised on withdraw
+            profitsOnWithdraw = profitsOnWithdraw.add(surplus);
+            //Stake back the profits to staking pool
+            if (surplus > 0) _deposit(surplus);
         }
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
+        //We never make a loss on a withdraw from alchemix staking pool so no need to record it
     }
 
     function prepareMigration(address _newStrategy) internal virtual override {
