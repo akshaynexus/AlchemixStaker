@@ -1,5 +1,21 @@
 import pytest
-from brownie import config
+from brownie import config, AlchemixStakingStrategy, AlchemixETHStrategy
+
+fixtures = "currency", "whale", "strategyBase"
+params = [
+    pytest.param(
+        "0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF",
+        "0xcce949De564fE60e7f96C85e55177F8B9E4CF61b",
+        AlchemixStakingStrategy,
+        id="ALCX",
+    ),
+    pytest.param(
+        "0xc3f279090a47e80990fe3a9c30d24cb117ef91a8",
+        "0xf36B9a3848541297d824b346e590351F47742986",
+        AlchemixETHStrategy,
+        id="ALCX-WETH",
+    ),
+]
 
 
 @pytest.fixture
@@ -60,7 +76,7 @@ def currencyLP(interface):
 @pytest.fixture
 def whaleLP(accounts, web3, currency, chain):
     # Random address with good amount of lps
-    yield accounts.at("0xf36B9a3848541297d824b346e590351F47742986", force=True)
+    yield accounts.at("0xA4fc358455Febe425536fd1878bE67FfDBDEC59a", force=True)
 
 
 @pytest.fixture
