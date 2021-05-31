@@ -19,7 +19,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
     using SafeMath for uint256;
 
     uint256 _poolId = 1;
-    uint256 surplusProfit = 0;
+    uint256 public surplusProfit = 0;
     //Initiate staking gov interface
     IStakingPools public pool = IStakingPools(0xAB8e74017a8Cc7c15FFcCd726603790d26d7DeCa);
 
