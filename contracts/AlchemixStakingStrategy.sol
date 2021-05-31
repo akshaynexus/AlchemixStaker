@@ -19,7 +19,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
     using SafeMath for uint256;
 
     uint256 _poolId = 1;
-
+    uint256 surplusProfit = 0;
     //Initiate staking gov interface
     IStakingPools public pool = IStakingPools(0xAB8e74017a8Cc7c15FFcCd726603790d26d7DeCa);
 
@@ -82,7 +82,9 @@ contract AlchemixStakingStrategy is BaseStrategy {
         uint256 balanceOfWantBefore = balanceOfWant();
         getReward();
         //Only use current balance in contract as profit on Pure ALCX staking strat
-        _profit = _poolId != 1 ? balanceOfWant().sub(balanceOfWantBefore) : balanceOfWant();
+        _profit = balanceOfWant().sub(balanceOfWantBefore);
+        _profit += surplusProfit;
+        surplusProfit = 0;
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
@@ -110,7 +112,11 @@ contract AlchemixStakingStrategy is BaseStrategy {
         }
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
-        //We never make a loss on a withdraw from alchemix staking pool so no need to record it
+        if (balanceOfWant() > _amountNeeded) {
+            //Record surplus,after prepare return adjustposition will invest the excess
+            uint256 surplus = balanceOfWant().sub(_amountNeeded);
+            surplusProfit = surplusProfit.add(surplus);
+        }
     }
 
     function prepareMigration(address _newStrategy) internal virtual override {
