@@ -43,6 +43,13 @@ def test_operation(
     vault.deposit(alice_deposit, {"from": alice})
     # Sleep and harvest 5 times
     sleepAndHarvest(5, stakingstrategy, gov)
+    # Log estimated APR
+    growthInShares = vault.pricePerShare() - 1e18
+    growthInPercent = (growthInShares / 1e18) * 100
+    growthInPercent = growthInPercent * 24
+    growthYearly = growthInPercent * 365
+    print(f"Yearly APR :{growthYearly}%")
+    print(vault.pricePerShare() / 1e18)
     # We should have made profit or stayed stagnant (This happens when there is no rewards in 1INCH rewards)
     assert vault.pricePerShare() / 1e18 >= 1
     # Withdraws should not fail
@@ -95,6 +102,13 @@ def test_operation_lpstrat(
     vaultlp.deposit(alice_deposit, {"from": alice})
     # Sleep and harvest 5 times
     sleepAndHarvest(5, strategylp, gov)
+    # Log estimated APR
+    growthInShares = vaultlp.pricePerShare() - 1e18
+    growthInPercent = (growthInShares / 1e18) * 100
+    growthInPercent = growthInPercent * 24
+    growthYearly = growthInPercent * 365
+    print(f"Yearly APR :{growthYearly}%")
+    print(vaultlp.pricePerShare() / 1e18)
     # We should have made profit or stayed stagnant (This happens when there is no rewards in 1INCH rewards)
     assert vaultlp.pricePerShare() / 1e18 >= 1
     # Withdraws should not fail
@@ -112,8 +126,10 @@ def test_operation_lpstrat(
 def sleepAndHarvest(times, strat, gov):
     for i in range(times):
         debugStratData(strat, "Before harvest" + str(i))
-        chain.sleep(2500)
-        chain.mine(1)
+        # Alchemix staking pools calculate reward per block,so mimic mainnet chain flow to get accurate returns
+        for j in range(139):
+            chain.sleep(13)
+            chain.mine(1)
         strat.harvest({"from": gov})
         debugStratData(strat, "After harvest" + str(i))
 
