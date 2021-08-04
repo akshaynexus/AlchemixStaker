@@ -9,12 +9,12 @@ params = [
         AlchemixStakingStrategy,
         id="ALCX",
     ),
-    pytest.param(
-        "0xc3f279090a47e80990fe3a9c30d24cb117ef91a8",
-        "0xf36B9a3848541297d824b346e590351F47742986",
-        AlchemixETHStrategy,
-        id="ALCX-WETH",
-    ),
+    # pytest.param(
+    #     "0xc3f279090a47e80990fe3a9c30d24cb117ef91a8",
+    #     "0xf36B9a3848541297d824b346e590351F47742986",
+    #     AlchemixETHStrategy,
+    #     id="ALCX-WETH",
+    # ),
 ]
 
 

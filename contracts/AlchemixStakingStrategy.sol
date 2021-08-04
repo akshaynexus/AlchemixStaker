@@ -81,9 +81,15 @@ contract AlchemixStakingStrategy is BaseStrategy {
 
         uint256 balanceOfWantBefore = balanceOfWant();
         getReward();
+        uint256 balanceAfter = balanceOfWant();
         //Only use current balance in contract as profit on Pure ALCX staking strat
-        _profit = balanceOfWant().sub(balanceOfWantBefore);
+        _profit = balanceAfter.sub(balanceOfWantBefore);
         _profit += surplusProfit;
+        uint256 requiredWantBal = _profit + _debtPayment;
+        if (balanceAfter < requiredWantBal) {
+            //Withdraw enough to satisfy profit check
+            _withdraw(requiredWantBal.sub(balanceAfter));
+        }
         surplusProfit = 0;
     }
 
@@ -106,15 +112,19 @@ contract AlchemixStakingStrategy is BaseStrategy {
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
         uint256 balanceWant = balanceOfWant();
         uint256 balanceStaked = balanceOfStake();
+        uint256 toWithdraw = 0;
         if (_amountNeeded > balanceWant) {
+            toWithdraw = (Math.min(balanceStaked, _amountNeeded - balanceWant));
             // unstake needed amount
-            _withdraw((Math.min(balanceStaked, _amountNeeded - balanceWant)));
+            _withdraw(toWithdraw);
         }
+        uint256 balanceWantAfter = balanceOfWant();
+        uint256 wantDiff = balanceWantAfter.sub(balanceWant);
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
-        if (balanceOfWant() > _amountNeeded) {
+        if (wantDiff > toWithdraw) {
             //Record surplus,after prepare return adjustposition will invest the excess
-            uint256 surplus = balanceOfWant().sub(_amountNeeded);
+            uint256 surplus = wantDiff.sub(toWithdraw);
             surplusProfit = surplusProfit.add(surplus);
         }
     }
