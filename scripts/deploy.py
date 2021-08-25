@@ -134,5 +134,8 @@ def main():
         _numOfShares = [660]
         sharer = ISharer(SHARER)
         sharer.setContributors(
-            strategy, contributors, _numOfShares, {"from": dev},
+            strategy,
+            contributors,
+            _numOfShares,
+            {"from": dev},
         )

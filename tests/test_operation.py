@@ -43,8 +43,8 @@ def test_operation(
     vault.deposit(alice_deposit, {"from": alice})
     # Sleep and harvest 5 times
     sleepAndHarvest(5, stakingstrategy, gov)
-    #sleep for 2 days
-    chain.sleep(24*2*60*60)
+    # sleep for 2 days
+    chain.sleep(24 * 2 * 60 * 60)
     # Log estimated APR
     growthInShares = vault.pricePerShare() - 1e18
     growthInPercent = (growthInShares / 1e18) * 100
@@ -55,13 +55,13 @@ def test_operation(
 
     # We should have made profit or stayed stagnant (This happens when there is no rewards in 1INCH rewards)
     assert vault.pricePerShare() / 1e18 >= 1
-    #Set debt ratio to lower than 100%
-    vault.updateStrategyDebtRatio(stakingstrategy,9_800, {'from':gov})
+    # Set debt ratio to lower than 100%
+    vault.updateStrategyDebtRatio(stakingstrategy, 9_800, {"from": gov})
     # Withdraws should not fail
     vault.withdraw(alice_deposit, {"from": alice})
     assert stakingstrategy.surplusProfit() > 0
     # Try harvesting again,this should work
-    stakingstrategy.harvest({'from':gov})
+    stakingstrategy.harvest({"from": gov})
     vault.withdraw(bob_deposit, {"from": bob})
 
     # Depositors after withdraw should have a profit or gotten the original amount

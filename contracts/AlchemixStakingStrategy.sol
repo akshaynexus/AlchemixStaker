@@ -20,6 +20,8 @@ contract AlchemixStakingStrategy is BaseStrategy {
 
     uint256 _poolId = 1;
     uint256 public surplusProfit = 0;
+    uint256 public manualLoss = 0;
+
     //Initiate staking gov interface
     IStakingPools public pool = IStakingPools(0xAB8e74017a8Cc7c15FFcCd726603790d26d7DeCa);
 
@@ -47,7 +49,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
     }
 
     function estimatedTotalAssets() public view override returns (uint256) {
-        //Add the vault tokens + staked tokens from 1inch governance contract
+        //Add the vault tokens + staked tokens from alcx governance contract
         return balanceOfWant().add(balanceOfStake()).add(pendingReward());
     }
 
@@ -62,7 +64,14 @@ contract AlchemixStakingStrategy is BaseStrategy {
     function getReward() internal virtual {
         pool.claim(_poolId);
     }
+    
+    function setSurplusProfit(uint newSurplus) external onlyStrategist {
+        surplusProfit = newSurplus;
+    }
 
+    function setLoss(uint _loss) external onlyStrategist {
+        manualLoss = _loss;
+    }
     function prepareReturn(uint256 _debtOutstanding)
         internal
         override
@@ -85,6 +94,9 @@ contract AlchemixStakingStrategy is BaseStrategy {
         //Only use current balance in contract as profit on Pure ALCX staking strat
         _profit = balanceAfter.sub(balanceOfWantBefore);
         _profit += surplusProfit;
+        //Set manual loss amount
+        _loss += manualLoss;
+        manualLoss = 0;
         uint256 requiredWantBal = _profit + _debtPayment;
         if (balanceAfter < requiredWantBal) {
             //Withdraw enough to satisfy profit check
