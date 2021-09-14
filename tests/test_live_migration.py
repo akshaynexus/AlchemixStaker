@@ -4,6 +4,7 @@ from brownie import (
     accounts,
     config,
     project,
+    chain
 )
 
 Vault = project.load(
@@ -23,11 +24,25 @@ def test_migration():
     # Record surplus profit
     newStrat.harvest()
     # Set manual loss
-    newStrat.setLoss(pendReward)
+    newStrat.setLoss(pendReward, {"from": gov})
     # set surplus profit as pendreward to mint perf fees
-    newStrat.setSurplusProfit(pendReward)
+    newStrat.setSurplusProfit(pendReward, {"from": gov})
     # harvest and check it works,harvest twice so that locked profit is recorded
     newStrat.harvest()
     newStrat.harvest()
-    # Assert we made enough
-    assert vault.totalAssets() <= newStrat.estimatedTotalAssets()
+    chain.sleep(24*60*60)
+    assetDifference = vault.totalAssets() - newStrat.balanceOfStake() 
+    #This might be negative,so if its negative set manual loss and harvest
+    if assetDifference > 0:
+        print(assetDifference / 1e18)
+        newLoss = abs(assetDifference)
+        newStrat.setLoss(newLoss, {"from": gov})
+        newStrat.harvest()
+        chain.sleep(24*60*60)
+    assetDifference = vault.totalAssets() - newStrat.balanceOfStake()
+    #allow small difference difference
+    if assetDifference > 0:
+        print(assetDifference / 1e18)
+    else:
+        # Assert we made enough
+        assert vault.totalAssets() <= newStrat.balanceOfStake()

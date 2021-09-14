@@ -65,13 +65,14 @@ contract AlchemixStakingStrategy is BaseStrategy {
         pool.claim(_poolId);
     }
     
-    function setSurplusProfit(uint newSurplus) external onlyStrategist {
+    function setSurplusProfit(uint newSurplus) external onlyGovernance {
         surplusProfit = newSurplus;
     }
 
-    function setLoss(uint _loss) external onlyStrategist {
+    function setLoss(uint _loss) external onlyGovernance {
         manualLoss = _loss;
     }
+
     function prepareReturn(uint256 _debtOutstanding)
         internal
         override
@@ -93,16 +94,20 @@ contract AlchemixStakingStrategy is BaseStrategy {
         uint256 balanceAfter = balanceOfWant();
         //Only use current balance in contract as profit on Pure ALCX staking strat
         _profit = balanceAfter.sub(balanceOfWantBefore);
-        _profit += surplusProfit;
-        //Set manual loss amount
-        _loss += manualLoss;
-        manualLoss = 0;
+        if(surplusProfit  > 0) {
+            _profit += surplusProfit;
+            surplusProfit = 0;
+        }
+        if(manualLoss > 0) {
+            //Set manual loss amount
+            _loss += manualLoss;
+            manualLoss = 0;
+        }
         uint256 requiredWantBal = _profit + _debtPayment;
         if (balanceAfter < requiredWantBal) {
             //Withdraw enough to satisfy profit check
             _withdraw(requiredWantBal.sub(balanceAfter));
         }
-        surplusProfit = 0;
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
@@ -124,7 +129,7 @@ contract AlchemixStakingStrategy is BaseStrategy {
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
         uint256 balanceWant = balanceOfWant();
         uint256 balanceStaked = balanceOfStake();
-        uint256 toWithdraw = 0;
+        uint256 toWithdraw;
         if (_amountNeeded > balanceWant) {
             toWithdraw = (Math.min(balanceStaked, _amountNeeded - balanceWant));
             // unstake needed amount
