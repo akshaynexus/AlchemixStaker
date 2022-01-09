@@ -64,13 +64,22 @@ contract AlchemixStakingStrategy is BaseStrategy {
     function getReward() internal virtual {
         pool.claim(_poolId);
     }
-    
-    function setSurplusProfit(uint newSurplus) external onlyGovernance {
+
+    function setSurplusProfit(uint256 newSurplus) external onlyGovernance {
         surplusProfit = newSurplus;
     }
 
-    function setLoss(uint _loss) external onlyGovernance {
+    function setLoss(uint256 _loss) external onlyGovernance {
         manualLoss = _loss;
+    }
+
+    function pendingProfit() public view returns (uint256) {
+        uint256 debt = vault.strategies(address(this)).totalDebt;
+        uint256 assets = estimatedTotalAssets();
+        if (debt < assets) {
+            //This will add to profit
+            return assets.sub(debt);
+        }
     }
 
     function prepareReturn(uint256 _debtOutstanding)
@@ -92,17 +101,18 @@ contract AlchemixStakingStrategy is BaseStrategy {
         uint256 balanceOfWantBefore = balanceOfWant();
         getReward();
         uint256 balanceAfter = balanceOfWant();
-        //Only use current balance in contract as profit on Pure ALCX staking strat
-        _profit = balanceAfter.sub(balanceOfWantBefore);
-        if(surplusProfit  > 0) {
+
+        _profit = pendingProfit();
+        if (surplusProfit > 0) {
             _profit += surplusProfit;
             surplusProfit = 0;
         }
-        if(manualLoss > 0) {
+        if (manualLoss > 0) {
             //Set manual loss amount
             _loss += manualLoss;
             manualLoss = 0;
         }
+
         uint256 requiredWantBal = _profit + _debtPayment;
         if (balanceAfter < requiredWantBal) {
             //Withdraw enough to satisfy profit check
@@ -135,15 +145,9 @@ contract AlchemixStakingStrategy is BaseStrategy {
             // unstake needed amount
             _withdraw(toWithdraw);
         }
-        uint256 balanceWantAfter = balanceOfWant();
-        uint256 wantDiff = balanceWantAfter.sub(balanceWant);
         // Since we might free more than needed, let's send back the min
         _liquidatedAmount = Math.min(balanceOfWant(), _amountNeeded);
-        if (wantDiff > toWithdraw) {
-            //Record surplus,after prepare return adjustposition will invest the excess
-            uint256 surplus = wantDiff.sub(toWithdraw);
-            surplusProfit = surplusProfit.add(surplus);
-        }
+        _loss = _liquidatedAmount < _amountNeeded ? _amountNeeded.sub(_liquidatedAmount) : 0;
     }
 
     function prepareMigration(address _newStrategy) internal virtual override {
